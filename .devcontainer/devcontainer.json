@@ -27,7 +27,8 @@
 		// QEMU launch options. Used in `run_image.sh`
 		"QEMU_OPTS": "-vnc :0",
 		// Path to MikanOS source code.
-		"OS_DIR": "/workspaces/mikanos-devcontainer/mikanos"
+		"OS_DIR": "/workspaces/mikanos-devcontainer/mikanos",
+		"REF_DIR": "/workspaces/mikanos-devcontainer/mikanos_reference"
 	},
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
