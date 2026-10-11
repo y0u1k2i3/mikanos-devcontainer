@@ -1,3 +1,13 @@
-.vscode/
+.vscode/settings.json
 *.img
+/edk2/Conf/*
+!/edk2/Conf/build_rule.txt
+!/edk2/Conf/BuildEnv.sh
+!/edk2/Conf/target.txt
+!/edk2/Conf/tools_def.txt
+mikanos/kernel/kernel.elf
+mikanos/kernel/*.o
+mikanos/kernel/*.d
+mikanos/kernel/*.bin
 mikanos_reference/
+/mnt

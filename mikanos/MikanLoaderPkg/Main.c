@@ -9,6 +9,8 @@
 #include <Protocol/SimpleFileSystem.h>
 #include <Uefi.h>
 
+#include "frame_buffer_config.hpp"
+
 struct MemoryMap {
 	UINTN buffer_size;
 	VOID* buffer;
@@ -217,7 +219,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE image_handle,
 
 	// day3.4 GOPを取得して画面描画する
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
-	EFI_STATUS status = OpenGOP(image_handle, &gop);
+	status = OpenGOP(image_handle, &gop);
 	if (EFI_ERROR(status)) {
 		Print(L"failed to open GOP: %r\n", status);
 		Halt();
@@ -240,7 +242,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE image_handle,
 
 	// day3.3 カーネルを読み込む
 	EFI_FILE_PROTOCOL* kernel_file;
-	EFI_STATUS status = root_dir->Open(
+	status = root_dir->Open(
 		root_dir, &kernel_file, L"\\kernel.elf", EFI_FILE_MODE_READ, 0);
 	if (EFI_ERROR(status)) {
 		Print(L"failed to open file '\\kernel.elf': %r\n", status);
@@ -277,7 +279,6 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE image_handle,
 	Print(L"Kernel: 0x%0lx, (%lu bytes)\n", kernel_base_addr, kernel_file_size);
 
 	// day3.3 カーネル起動前にブートサービスを停止する
-	EFI_STATUS status;
 	status = gBS->ExitBootServices(image_handle, memmap.map_key);
 	if (EFI_ERROR(status)) {
 		status = GetMemoryMap(&memmap);
@@ -295,9 +296,28 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE image_handle,
 	// day3.3 カーネルを起動する
 	UINT64 entry_addr = *(UINT64*)(kernel_base_addr + 24);
 
-	typedef void EntryPointType(UINT64, UINT64);
+	// day4.2 ピクセルを自在に描く
+	struct FrameBufferConfig config = {(UINT8*)gop->Mode->FrameBufferBase,
+									   gop->Mode->Info->PixelsPerScanLine,
+									   gop->Mode->Info->HorizontalResolution,
+									   gop->Mode->Info->VerticalResolution,
+									   0};
+	switch (gop->Mode->Info->PixelFormat) {
+		case PixelRedGreenBlueReserved8BitPerColor:
+			config.pixel_format = kPixelRGBResv8BitPerColor;
+			break;
+		case PixelBlueGreenRedReserved8BitPerColor:
+			config.pixel_format = kPixelBGRResv8BitPerColor;
+			break;
+		default:
+			Print(L"Unimplemented pixel format: %d\n",
+				  gop->Mode->Info->PixelFormat);
+			Halt();
+	}
+
+	typedef void EntryPointType(const struct FrameBufferConfig*);
 	EntryPointType* entry_point = (EntryPointType*)entry_addr;
-	entry_point(gop->Mode->FrameBufferBase, gop->Mode->FrameBufferSize);
+	entry_point(&config);
 
 	Print(L"All done!!\n");
 
