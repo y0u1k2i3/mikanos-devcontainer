@@ -4,9 +4,8 @@
  * カーネル本体のプログラムを書いたファイル．
  */
 
-#include <stdint.h>
-
-#include <stddef.h>
+#include <cstddef>
+#include <cstdint>
 
 #include "frame_buffer_config.hpp"
 
